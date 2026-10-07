@@ -611,7 +611,7 @@ const SYN_FLAVOR = {
   "Mercury|Mercury":"a similar way of thinking and communicating"
 };
 function synFlavor(p1,p2){ return SYN_FLAVOR[[p1,p2].sort().join("|")] || null; }
-function computeCrossAspects(nameA,cA,nameB,cB){
+function computeCrossAspects(nameA,cA,nameB,cB,mapA,mapB){
   const out = [];
   PLANETS_ORDER.forEach(pA=>{
     const signA = cA.planets[pA].signIdx;
@@ -620,11 +620,11 @@ function computeCrossAspects(nameA,cA,nameB,cB){
         const flavor = synFlavor(pA,pB);
         const bothBenefic = BENEFIC.includes(pA)&&BENEFIC.includes(pB), bothMalefic = MALEFIC.includes(pA)&&MALEFIC.includes(pB);
         const verdict = bothBenefic?"positive":bothMalefic?"negative":"neutral";
-        out.push({verdict, text:`${nameA}'s ${pA} sits in the same sign as ${nameB}'s ${pB}${flavor?` \u2014 ${flavor}`:""}.`});
+        out.push({verdict, text:`${nameA}'s ${pA} sits in the same sign as ${nameB}'s ${pB}${flavor?` \u2014 ${flavor}`:""}. <i>Live for ${nameA} in their ${pA} Mahadasha (${periodLabel(mapA[pA])}); live for ${nameB} in their ${pB} Mahadasha (${periodLabel(mapB[pB])}).</i>`});
       }
     });
   });
-  function aspectsOneWay(fromName,cFrom,toName,cTo){
+  function aspectsOneWay(fromName,cFrom,toName,cTo,mapFrom,mapTo){
     PLANETS_ORDER.forEach(pF=>{
       const signF = cFrom.planets[pF].signIdx;
       const offsets=[6];
@@ -635,14 +635,14 @@ function computeCrossAspects(nameA,cA,nameB,cB){
           if(cTo.planets[pT].signIdx===targetSign){
             const flavor = synFlavor(pF,pT);
             const verdict = BENEFIC.includes(pF)?"positive":"negative";
-            out.push({verdict, text:`${fromName}'s ${pF} aspects ${toName}'s ${pT}${flavor?` (${flavor})`:""} \u2014 ${BENEFIC.includes(pF)?"a supportive, encouraging influence.":"adds pressure, delay or a testing edge."}`});
+            out.push({verdict, text:`${fromName}'s ${pF} aspects ${toName}'s ${pT}${flavor?` (${flavor})`:""} \u2014 ${BENEFIC.includes(pF)?"a supportive, encouraging influence.":"adds pressure, delay or a testing edge."} <i>Live for ${fromName} in their ${pF} Mahadasha (${periodLabel(mapFrom[pF])}).</i>`});
           }
         });
       });
     });
   }
-  aspectsOneWay(nameA,cA,nameB,cB);
-  aspectsOneWay(nameB,cB,nameA,cA);
+  aspectsOneWay(nameA,cA,nameB,cB,mapA,mapB);
+  aspectsOneWay(nameB,cB,nameA,cA,mapB,mapA);
   return out;
 }
 
@@ -1260,6 +1260,17 @@ function renderChemistry(){
   }
   renderMatrix();
 }
+function mahaPeriodMap(chart){
+  const map = {};
+  buildDasha(chart).forEach(p=>{ if(!map[p.lord]) map[p.lord]=p; }); // first/only occurrence of each lord in the 120y cycle
+  return map;
+}
+function periodLabel(period){
+  if(!period) return "period unavailable";
+  const now = Date.now();
+  const isCurrent = now>=period.start && now<period.end;
+  return `${fmtFullDate(period.start)} \u2013 ${fmtFullDate(period.end)}${isCurrent?" \u2014 running now":""}`;
+}
 function relrow(verdict,text){
   const tagClass = verdict==='positive'?'good':verdict==='negative'?'tense':'neutral';
   return `<div class="relrow"><span class="tag ${tagClass}">${verdict}</span><span>${text}</span></div>`;
@@ -1271,21 +1282,22 @@ function overlaySentence(label,otherName){
 }
 function renderSynastry(mA,mB){
   const cA=mA.chart, cB=mB.chart;
+  const mapA = mahaPeriodMap(cA), mapB = mahaPeriodMap(cB);
   let ov = `<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin:10px 0 6px">How ${escapeHtml(mA.name)}'s planets land in ${escapeHtml(mB.name)}'s houses</div>`;
   ov += PLANETS_ORDER.map(p=>{
     const house = ((cA.planets[p].signIdx - cB.ascSignIdx+12)%12)+1;
     const v = crossPlacementVerdict(p,house);
-    return relrow(v.label, `${escapeHtml(mA.name)}'s ${p} falls in ${escapeHtml(mB.name)}'s ${house}${ordSuf(house)} house (${HOUSE_MEANING[house]}) \u2014 ${overlaySentence(v.label,mB.name)}`);
+    return relrow(v.label, `${escapeHtml(mA.name)}'s ${p} falls in ${escapeHtml(mB.name)}'s ${house}${ordSuf(house)} house (${HOUSE_MEANING[house]}) \u2014 ${overlaySentence(v.label,mB.name)} <i>Most active during ${escapeHtml(mA.name)}'s ${p} Mahadasha: ${periodLabel(mapA[p])}.</i>`);
   }).join("");
   ov += `<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin:16px 0 6px">How ${escapeHtml(mB.name)}'s planets land in ${escapeHtml(mA.name)}'s houses</div>`;
   ov += PLANETS_ORDER.map(p=>{
     const house = ((cB.planets[p].signIdx - cA.ascSignIdx+12)%12)+1;
     const v = crossPlacementVerdict(p,house);
-    return relrow(v.label, `${escapeHtml(mB.name)}'s ${p} falls in ${escapeHtml(mA.name)}'s ${house}${ordSuf(house)} house (${HOUSE_MEANING[house]}) \u2014 ${overlaySentence(v.label,mA.name)}`);
+    return relrow(v.label, `${escapeHtml(mB.name)}'s ${p} falls in ${escapeHtml(mA.name)}'s ${house}${ordSuf(house)} house (${HOUSE_MEANING[house]}) \u2014 ${overlaySentence(v.label,mA.name)} <i>Most active during ${escapeHtml(mB.name)}'s ${p} Mahadasha: ${periodLabel(mapB[p])}.</i>`);
   }).join("");
   document.getElementById("overlay-list").innerHTML = ov;
 
-  const links = computeCrossAspects(mA.name,cA,mB.name,cB);
+  const links = computeCrossAspects(mA.name,cA,mB.name,cB,mapA,mapB);
   document.getElementById("crossaspect-list").innerHTML = links.length
     ? links.map(l=>relrow(l.verdict,l.text)).join("")
     : `<p class="hint">No direct sign-to-sign links this time.</p>`;
