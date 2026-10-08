@@ -186,6 +186,29 @@ table.ptable tr:hover td{background:rgba(201,151,45,.08)}
 .year-cell.neutral{background:#FBEFD8}
 .year-cell:hover{outline:2px solid var(--gold)}
 
+.scorebox{background:var(--paper2);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:12.5px}
+.scorebox>b{display:block;margin-bottom:6px;color:var(--night)}
+.sb-row{display:flex;justify-content:space-between;gap:14px;padding:3px 0;line-height:1.5}
+.sb-pts{font-weight:700;min-width:28px;text-align:right}
+.sb-pts.up{color:var(--sage)}.sb-pts.down{color:var(--vermilion)}
+.sb-total{border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-weight:700}
+.matrix td.sc5,.matrix td.sc4{background:#E1EFE3}
+.matrix td.sc3{background:#FBEFD8}
+.matrix td.sc2,.matrix td.sc1{background:#F5E1E1}
+.year-cell.sel{outline:2px solid var(--vermilion)}
+.ydetail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:14px}
+.ydetail h4{margin:0 0 6px;font-size:16px}
+.ydetail .ysum{font-size:13px;line-height:1.7;margin:8px 0 14px}
+.monthgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.month-card{border-radius:8px;padding:9px 11px;font-size:11.5px;line-height:1.5;cursor:pointer;border:1px solid rgba(0,0,0,.06)}
+.month-card.positive{background:#E1EFE3}.month-card.negative{background:#F5E1E1}.month-card.neutral{background:#FBEFD8}
+.month-card.sel{outline:2px solid var(--vermilion)}
+.month-card:hover{outline:2px solid var(--gold)}
+.month-card .mn{font-weight:700;font-size:13px}
+.daylist{margin-top:14px}
+.dayrow{display:flex;gap:10px;padding:6px 10px;border-left:4px solid var(--line);background:#FAFAF6;margin-bottom:3px;font-size:12px;line-height:1.5;border-radius:0 6px 6px 0}
+.dayrow.positive{border-left-color:var(--sage)}.dayrow.negative{border-left-color:var(--vermilion)}.dayrow.neutral{border-left-color:var(--gold)}
+.dayrow .dd{flex:0 0 78px;font-weight:700}
 .pairpick{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:18px}
 .pairpick .fld{min-width:200px}
 .pairpick label{font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px}
@@ -328,8 +351,9 @@ table.ptable tr:hover td{background:rgba(201,151,45,.08)}
           <div class="dasha-tree" id="dasha-tree"></div>
 
           <h3 class="subhead">Year-by-year outlook</h3>
-          <p class="hint">Colour shows whether that year's ruling Mahadasha tends to be supportive (green), mixed (amber) or challenging (red) for this specific chart. Click a year to deep-dive it above.</p>
+          <p class="hint">Colour shows whether that year's ruling Mahadasha tends to be supportive (green), mixed (amber) or challenging (red) for this specific chart. Click a year to open its month-by-month outlook, then click a month for day-by-day detail.</p>
           <div class="year-timeline" id="year-timeline"></div>
+          <div id="year-detail"></div>
 
           <h3 class="subhead">Current Sky Outlook</h3>
           <p class="hint">Where slow-moving Saturn and Jupiter are transiting today, relative to this person's Moon sign.</p>
@@ -348,7 +372,7 @@ table.ptable tr:hover td{background:rgba(201,151,45,.08)}
         <div class="chem-verdict" id="chem-verdict"></div>
 
         <h3 class="subhead">Planetary interconnections</h3>
-        <p class="hint">How each person's planets land in the other's houses (e.g. "your Jupiter falls in her 5th house"), and where their planets directly connect sign-to-sign.</p>
+        <p class="hint">How each person's planets land in the other's houses (e.g. "your Jupiter falls in her 5th house"), and where their planets directly connect sign-to-sign. Periods shown only run from the later of the two birth dates up to 2050.</p>
         <div id="overlay-list"></div>
         <h4 style="margin:18px 0 8px;font-size:13.5px;color:var(--night)">Direct planet-to-planet links</h4>
         <div id="crossaspect-list"></div>
@@ -356,6 +380,14 @@ table.ptable tr:hover td{background:rgba(201,151,45,.08)}
         <h3 style="margin:30px 0 8px">Whole-family matrix</h3>
         <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 8px">Quick harmony read for every pair (1–5). Click a cell to see it above in detail.</p>
         <div style="overflow-x:auto"><table class="matrix" id="matrix"></table></div>
+        <div class="scorebox" style="margin-top:12px">
+          <b>What the 5 points mean</b>
+          <div class="sb-row"><span>Every pair starts at <b>3</b> (balanced), then moves up or down by up to 1 point for each of three checks:</span><span></span></div>
+          <div class="sb-row"><span>1 · <b>Moon-sign rapport</b> — how the two Moon signs sit relative to each other (Bhakoot): supportive +1, neutral 0, tense (6/8 or 2/12 axis) −1</span><span></span></div>
+          <div class="sb-row"><span>2 · <b>Moon-lord friendship</b> — are the planets ruling each Moon sign friends (+1), neutral (0) or enemies (−1)</span><span></span></div>
+          <div class="sb-row"><span>3 · <b>Ascendant-lord friendship</b> — same test on the rulers of each Lagna, showing how their core approach to life fits</span><span></span></div>
+          <div class="sb-row"><span><b>5</b> Excellent · <b>4</b> Good · <b>3</b> Balanced · <b>2</b> Needs effort · <b>1</b> Challenging. Hover any cell for its exact breakdown.</span><span></span></div>
+        </div>
       </div>
     </section>
 
@@ -1142,17 +1174,12 @@ function renderDashaExplorer(c){
   // year timeline
   const years = yearWiseTimeline(c, 99);
   document.getElementById("year-timeline").innerHTML = years.map(y=>
-    `<div class="year-cell ${y.verdict}" data-ms="${y.ms}"><div class="yr">${y.year} <span style="font-weight:400;color:var(--ink-soft)">(age ${y.age})</span></div>${y.mahaLord} / ${y.antarLord}</div>`
+    `<div class="year-cell ${y.verdict}" data-ms="${y.ms}" data-year="${y.year}"><div class="yr">${y.year} <span style="font-weight:400;color:var(--ink-soft)">(age ${y.age})</span></div>${y.mahaLord} / ${y.antarLord}</div>`
   ).join("");
   document.querySelectorAll(".year-cell").forEach(cell=>{
-    cell.addEventListener("click", ()=>{
-      const d = new Date(+cell.dataset.ms);
-      dateInput.value = d.toISOString().slice(0,10);
-      renderDeepDive(c);
-      const ddEl = document.getElementById("dd_date");
-      if(ddEl.scrollIntoView) ddEl.scrollIntoView({behavior:"smooth", block:"center"});
-    });
+    cell.addEventListener("click", ()=> renderYearDetail(c, +cell.dataset.year));
   });
+  document.getElementById("year-detail").innerHTML = "";
 }
 function renderDeepDive(c){
   const dateInput = document.getElementById("dd_date");
@@ -1168,6 +1195,84 @@ function renderDeepDive(c){
       <div class="lvl"><span style="color:${pv.color}">Pratyantardasha</span><b>${d.praty.lord}</b></div>
     </div>
     <p class="dd-impact">${impact}</p>`;
+}
+
+/* ============================= YEAR / MONTH / DAY DRILL-DOWN ============================= */
+const DASHA_SHORT = {
+  Sun:"authority, vitality and recognition", Moon:"mood, home and family matters", Mars:"energy, action and friction",
+  Rahu:"ambition, restlessness and sudden turns", Jupiter:"growth, advice and good fortune", Saturn:"discipline, delay and responsibility",
+  Mercury:"communication, trade and learning", Ketu:"detachment, withdrawal and loose ends", Venus:"relationships, comfort and enjoyment"
+};
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const FAV_MOON_HOUSES = [1,3,6,7,10,11];
+function compositeScore(c, d){
+  return planetVerdict(c,d.maha.lord).score*0.4 + planetVerdict(c,d.antar.lord).score*0.4 + planetVerdict(c,d.praty.lord).score*0.2;
+}
+function labelFor(score){ return score>=58?"positive":score<=42?"negative":"neutral"; }
+function wordFor(label){ return label==="positive"?"supportive":label==="negative"?"testing":"mixed"; }
+function transitAt(chart, date){
+  const time = Astronomy.MakeTime(date), ay = ayanamsa(date);
+  const sat = Math.floor(norm360(eclLon("Saturn",time)-ay)/30), jup = Math.floor(norm360(eclLon("Jupiter",time)-ay)/30);
+  const moon = chart.planets.Moon.signIdx;
+  return {satSign:sat, jupSign:jup, satFromMoon:((sat-moon+12)%12)+1, jupFromMoon:((jup-moon+12)%12)+1};
+}
+function tenseFor(year){ const y=new Date().getUTCFullYear(); return year<y?"was":year===y?"is":"is likely to be"; }
+function monthData(c, year, mi){
+  const start = Date.UTC(year,mi,1,12), mid = Date.UTC(year,mi,15,12), end = Date.UTC(year,mi+1,0,12);
+  const dMid = dashaAt(c,mid), dS = dashaAt(c,start), dE = dashaAt(c,end);
+  const score = compositeScore(c,dMid);
+  return {mi, start, mid, end, d:dMid, changes:(dS.antar.lord!==dE.antar.lord), antarStart:dS.antar.lord, antarEnd:dE.antar.lord, score, label:labelFor(score)};
+}
+function renderYearDetail(c, year){
+  document.querySelectorAll(".year-cell").forEach(x=>x.classList.toggle("sel", +x.dataset.year===year));
+  const age = year - c.date.getUTCFullYear();
+  const months = []; for(let m=0;m<12;m++) months.push(monthData(c,year,m));
+  const avg = months.reduce((a,b)=>a+b.score,0)/12, label = labelFor(avg);
+  const best = months.reduce((a,b)=>b.score>a.score?b:a), worst = months.reduce((a,b)=>b.score<a.score?b:a);
+  const jan = dashaAt(c,Date.UTC(year,0,1,12)), dec = dashaAt(c,Date.UTC(year,11,31,12));
+  const antars = []; months.forEach(m=>{ if(!antars.includes(m.d.antar.lord)) antars.push(m.d.antar.lord); });
+  const tr = transitAt(c, new Date(Date.UTC(year,6,1)));
+  let satTxt = [12,1,2].includes(tr.satFromMoon) ? `Saturn passes through ${SIGNS[tr.satSign]}, inside the Sade Sati window from your Moon \u2014 a year of pressure, maturing and slow-but-solid progress.`
+    : [4,8].includes(tr.satFromMoon) ? `Saturn in ${SIGNS[tr.satSign]} sits in a Dhaiya angle to your Moon, adding routine strain and responsibility.`
+    : `Saturn in ${SIGNS[tr.satSign]} is in a calmer angle to your Moon.`;
+  let jupTxt = `Jupiter in ${SIGNS[tr.jupSign]} is the ${tr.jupFromMoon}${ordSuf(tr.jupFromMoon)} from your Moon, lifting ${HOUSE_MEANING[tr.jupFromMoon]}${[2,5,7,9,11].includes(tr.jupFromMoon)?" (a classically favourable placement)":""}.`;
+  const sumText = `${year} (age ${age}) ${tenseFor(year)} a <b>${wordFor(label)}</b> year overall. ` +
+    `${jan.maha.lord===dec.maha.lord?`The ${jan.maha.lord} Mahadasha runs throughout`:`The Mahadasha shifts from ${jan.maha.lord} to ${dec.maha.lord} during the year`} \u2014 themes of ${DASHA_SHORT[dec.maha.lord]}. ` +
+    `Antardashas active: ${antars.join(" \u2192 ")}. ` +
+    `Strongest stretch: <b>${MONTHS[best.mi]}</b>; most demanding: <b>${MONTHS[worst.mi]}</b>. ${satTxt} ${jupTxt}`;
+  let grid = months.map(m=>`<div class="month-card ${m.label}" data-mi="${m.mi}">
+      <div class="mn">${MONTHS[m.mi]}</div>
+      <div>${m.d.maha.lord} / ${m.d.antar.lord} / ${m.d.praty.lord}</div>
+      <div style="color:var(--ink-soft)">${wordFor(m.label)}${m.changes?` \u00b7 Antardasha changes ${m.antarStart}\u2192${m.antarEnd}`:""}</div></div>`).join("");
+  const box = document.getElementById("year-detail");
+  box.innerHTML = `<div class="ydetail"><h4>${year} \u2014 year outlook</h4><div class="ysum">${sumText}</div>
+    <p class="hint" style="margin-bottom:8px">Month cards show Mahadasha / Antardasha / Pratyantardasha mid-month. Click a month for day-by-day detail.</p>
+    <div class="monthgrid">${grid}</div><div id="month-detail"></div></div>`;
+  box.querySelectorAll(".month-card").forEach(card=>card.addEventListener("click",()=>renderMonthDetail(c,year,+card.dataset.mi)));
+  if(box.scrollIntoView) box.scrollIntoView({behavior:"smooth", block:"start"});
+}
+function renderMonthDetail(c, year, mi){
+  document.querySelectorAll(".month-card").forEach(x=>x.classList.toggle("sel", +x.dataset.mi===mi));
+  const days = new Date(Date.UTC(year,mi+1,0)).getUTCDate();
+  const natalMoon = c.planets.Moon.signIdx;
+  let rows = "", lastPraty = null;
+  const cnt = {positive:0,neutral:0,negative:0};
+  for(let d=1; d<=days; d++){
+    const ms = Date.UTC(year,mi,d,12), date = new Date(ms);
+    const ds = dashaAt(c,ms);
+    const time = Astronomy.MakeTime(date);
+    const moonSign = Math.floor(norm360(eclLon("Moon",time)-ayanamsa(date))/30);
+    const fromMoon = ((moonSign-natalMoon+12)%12)+1;
+    const fav = FAV_MOON_HOUSES.includes(fromMoon);
+    const score = compositeScore(c,ds)*0.6 + (fav?66:38)*0.4;
+    const label = labelFor(score); cnt[label]++;
+    const shift = (lastPraty && lastPraty!==ds.praty.lord) ? ` <i>(new ${ds.praty.lord} sub-period begins)</i>` : "";
+    lastPraty = ds.praty.lord;
+    rows += `<div class="dayrow ${label}"><span class="dd">${d} ${MONTHS[mi].slice(0,3)} <span style="font-weight:400;color:var(--ink-soft)">${date.toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'})}</span></span>
+      <span><b>${ds.maha.lord}/${ds.antar.lord}/${ds.praty.lord}</b> \u2014 ${wordFor(label)} day. Moon in ${SIGNS[moonSign]}, ${fromMoon}${ordSuf(fromMoon)} from your natal Moon (${fav?"favourable":"less favourable"} for daily affairs); ${ds.praty.lord} sub-period brings ${DASHA_SHORT[ds.praty.lord]}.${shift}</span></div>`;
+  }
+  document.getElementById("month-detail").innerHTML = `<div class="daylist"><h4 style="margin:6px 0 4px;font-size:14px">${MONTHS[mi]} ${year} \u2014 day by day</h4>
+    <p class="hint">${cnt.positive} supportive \u00b7 ${cnt.neutral} mixed \u00b7 ${cnt.negative} testing days. Daily colour blends the running dasha periods (60%) with the Moon's daily transit from your natal Moon (40%).</p>${rows}</div>`;
 }
 
 /* ============================= TABS ============================= */
@@ -1233,9 +1338,16 @@ function pairAnalysis(mA,mB){
   const willText = `Their Ascendant rulers (${ascLordA} and ${ascLordB}) are ${ascRel==="same"?"the same planet":ascRel+"s"} — ${ascRel==="friend"||ascRel==="same"?"their core approaches to life tend to reinforce each other.":ascRel==="enemy"?"their basic approaches to life can pull in different directions, so respecting each other's pace matters.":"their approaches differ but don't clash outright."}`;
 
   const scoreMap={good:1,neutral:0,tense:-1};
-  let score = 3 + scoreMap[bhakootTag] + scoreMap[lordTag] + (ascRel==="friend"||ascRel==="same"?1:ascRel==="enemy"?-1:0);
-  score = Math.max(1,Math.min(5,score));
-  return {bhakootTag,bhakootText,lordTag,lordText,willText,score,dist};
+  const ascPts = (ascRel==="friend"||ascRel==="same")?1:ascRel==="enemy"?-1:0;
+  const parts = [
+    {label:"Starting point (balanced)", pts:3},
+    {label:"Moon-sign rapport (emotional ease)", pts:scoreMap[bhakootTag]},
+    {label:"Moon-lord friendship (mind-to-mind goodwill)", pts:scoreMap[lordTag]},
+    {label:"Ascendant-lord friendship (core approach to life)", pts:ascPts}
+  ];
+  const raw = parts.reduce((s,p)=>s+p.pts,0);
+  const score = Math.max(1,Math.min(5,raw));
+  return {bhakootTag,bhakootText,lordTag,lordText,willText,score,dist,parts,raw};
 }
 
 function renderChemistry(){
@@ -1255,7 +1367,8 @@ function renderChemistry(){
     holder.innerHTML = `<h4>${escapeHtml(mA.name)} &amp; ${escapeHtml(mB.name)}</h4>
       <div class="meter" style="margin-bottom:10px">${dots}</div>
       <span class="tag ${r.bhakootTag}">Moon rapport</span><span class="tag ${r.lordTag}">Moon-lord bond</span>
-      <p style="margin-top:12px">${r.bhakootText}</p><p>${r.lordText}</p><p>${r.willText}</p>`;
+      <p style="margin-top:12px">${r.bhakootText}</p><p>${r.lordText}</p><p>${r.willText}</p>
+      <div class="scorebox"><b>How the ${r.score}/5 is made</b>${breakdownHtml(r)}</div>`;
     renderSynastry(mA,mB);
   }
   renderMatrix();
@@ -1265,11 +1378,17 @@ function mahaPeriodMap(chart){
   buildDasha(chart).forEach(p=>{ if(!map[p.lord]) map[p.lord]=p; }); // first/only occurrence of each lord in the 120y cycle
   return map;
 }
+let SYN_WINDOW = {lo:-Infinity, hi:Date.UTC(2050,11,31,23,59,59)};
 function periodLabel(period){
   if(!period) return "period unavailable";
+  const start = Math.max(period.start, SYN_WINDOW.lo);
+  const end = Math.min(period.end, SYN_WINDOW.hi);
+  if(start>=end){
+    return `no active window between ${new Date(SYN_WINDOW.lo).getUTCFullYear()} and 2050`;
+  }
   const now = Date.now();
-  const isCurrent = now>=period.start && now<period.end;
-  return `${fmtFullDate(period.start)} \u2013 ${fmtFullDate(period.end)}${isCurrent?" \u2014 running now":""}`;
+  const isCurrent = now>=start && now<end;
+  return `${fmtFullDate(start)} \u2013 ${fmtFullDate(end)}${isCurrent?" \u2014 running now":""}`;
 }
 function relrow(verdict,text){
   const tagClass = verdict==='positive'?'good':verdict==='negative'?'tense':'neutral';
@@ -1282,6 +1401,7 @@ function overlaySentence(label,otherName){
 }
 function renderSynastry(mA,mB){
   const cA=mA.chart, cB=mB.chart;
+  SYN_WINDOW = {lo:Math.max(cA.utcMs, cB.utcMs), hi:Date.UTC(2050,11,31,23,59,59)};
   const mapA = mahaPeriodMap(cA), mapB = mahaPeriodMap(cB);
   let ov = `<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin:10px 0 6px">How ${escapeHtml(mA.name)}'s planets land in ${escapeHtml(mB.name)}'s houses</div>`;
   ov += PLANETS_ORDER.map(p=>{
@@ -1302,6 +1422,12 @@ function renderSynastry(mA,mB){
     ? links.map(l=>relrow(l.verdict,l.text)).join("")
     : `<p class="hint">No direct sign-to-sign links this time.</p>`;
 }
+const SCORE_WORD = {1:"Challenging",2:"Needs effort",3:"Balanced",4:"Good",5:"Excellent"};
+function breakdownHtml(r){
+  const rows = r.parts.map(x=>`<div class="sb-row"><span>${x.label}</span><span class="sb-pts ${x.pts>0?'up':x.pts<0?'down':''}">${x.pts>0?"+":""}${x.pts}</span></div>`).join("");
+  const note = r.raw!==r.score ? ` (total ${r.raw}, held within 1\u20135)` : "";
+  return rows + `<div class="sb-row sb-total"><span>Final harmony score${note}</span><span>${r.score}/5 \u2014 ${SCORE_WORD[r.score]}</span></div>`;
+}
 function renderMatrix(){
   const tbl = document.getElementById("matrix");
   let html = "<tr><th></th>"+members.map(m=>`<th>${escapeHtml(m.name)}</th>`).join("")+"</tr>";
@@ -1311,7 +1437,8 @@ function renderMatrix(){
       if(mA.id===mB.id){ html+="<td>—</td>"; }
       else{
         const r = pairAnalysis(mA,mB);
-        html += `<td class="clickable" data-a="${mA.id}" data-b="${mB.id}">${r.score}/5</td>`;
+        const tip = r.parts.map(x=>`${x.label}: ${x.pts>0?"+":""}${x.pts}`).join(" | ");
+        html += `<td class="clickable sc${r.score}" data-a="${mA.id}" data-b="${mB.id}" title="${tip}">${r.score}/5<br><span style="font-size:10px">${SCORE_WORD[r.score]}</span></td>`;
       }
     });
     html += "</tr>";
